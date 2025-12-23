@@ -15,12 +15,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        if (User::count() === 0) {
-            User::create([
+        User::firstOrCreate(
+            ['email' => 'abdelilah.ezzouini@gmail.com'],
+            [
                 'name' => 'Abdelilah EZZOUINI',
-                'email' => 'abdelilah.ezzouini@gmail.com',
                 'password' => bcrypt('password'),
-            ]);
-        }
+            ]
+        );
     }
 }

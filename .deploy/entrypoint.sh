@@ -14,6 +14,9 @@ echo "Application is in maintenance mode."
 echo "Running migrations and seeders..."
 php artisan migrate --seed --force
 
+echo "Setting database permissions..."
+chown www-data:www-data /var/www/html/database/database.sqlite
+
 echo "Migrations and seeders completed."
 
 echo "Running the application..."
