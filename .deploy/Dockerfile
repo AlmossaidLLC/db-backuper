@@ -1,32 +1,50 @@
-# Use the official PHP 8.3 FPM Alpine image for a lightweight base
+# Build stage for Composer dependencies
+FROM php:8.3-cli-alpine AS build
+
+# Install extensions required for Composer dependencies
+RUN apk add --no-cache libzip-dev icu-dev \
+    && docker-php-ext-install zip intl
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+WORKDIR /app
+
+COPY composer.json composer.lock ./
+
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+
+# Runtime stage
 FROM php:8.3-fpm-alpine
 
-# Install system dependencies, MySQL client for mysqldump, and PHP extensions required for Laravel
+# Install runtime dependencies and build tools (remove build tools after)
 RUN apk add --no-cache \
+    libpng \
+    libjpeg-turbo \
+    freetype \
+    libzip \
+    oniguruma \
+    mysql-client \
+    supervisor \
+    dcron \
+    caddy \
+    icu \
     libpng-dev \
     libjpeg-turbo-dev \
     freetype-dev \
     libzip-dev \
     oniguruma-dev \
-    mysql-client \
-    supervisor \
-    dcron \
-    caddy \
     icu-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip intl
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip intl \
+    && apk del libpng-dev libjpeg-turbo-dev freetype-dev libzip-dev oniguruma-dev icu-dev
 
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy composer files first for better caching
-COPY composer.json composer.lock ./
+# Copy vendor from build stage
+COPY --from=build /app/vendor ./vendor
 
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# Install PHP dependencies (production only)
-    RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 # Copy the rest of the application
 COPY . .
 
