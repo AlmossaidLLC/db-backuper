@@ -16,7 +16,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         if (User::count() === 0) {
-            User::factory()->create([
+            User::create([
                 'name' => 'Abdelilah EZZOUINI',
                 'email' => 'abdelilah.ezzouini@gmail.com',
                 'password' => bcrypt('password'),
