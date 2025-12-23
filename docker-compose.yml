@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: .deploy/Dockerfile
+    ports:
+      - "${APP_PORT:-9033}:80"
+    environment:
+      APP_NAME: DB Backuper
+      APP_ENV: production
+      APP_KEY: base64:tgq5MBqp81M1PFEjDx0BhK79iNG9FfIsg4dk43YMrS8=
+      APP_PORT: 9033
+      DB_CONNECTION: sqlite
+      DB_DATABASE: /var/www/html/database/database.sqlite
+    volumes:
+      - ./database:/var/www/html/database  # Mount database directory for SQLite persistence
+      - ./storage:/var/www/html/storage  # Mount storage for logs and cache

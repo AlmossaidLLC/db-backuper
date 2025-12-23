@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 2,
+  "dockerfilePath": ".deploy/Dockerfile",
+  "serviceName": "db-backuper",
+  "description": "Laravel Database Backuper with Filament Admin",
+  "instructions": {
+    "start": "This app uses mysqldump for database backups. Configure your database connection in the environment variables.",
+    "end": "Your app is deployed! Access the Filament admin at /admin"
+  },
+  "displayName": "DB Backuper",
+  "isOfficial": false,
+  "documentation": "https://laravel.com/docs",
+  "variables": [
+    {
+      "id": "APP_NAME",
+      "label": "App Name",
+      "defaultValue": "DB Backuper",
+      "description": "The name of your Laravel application"
+    },
+    {
+      "id": "APP_ENV",
+      "label": "Environment",
+      "defaultValue": "production",
+      "description": "Application environment"
+    },
+    {
+      "id": "APP_KEY",
+      "label": "App Key",
+      "description": "Laravel application key (generate with php artisan key:generate)"
+    },
+    {
+      "id": "DB_CONNECTION",
+      "label": "Database Connection",
+      "defaultValue": "sqlite",
+      "description": "Database driver (sqlite)"
+    },
+    {
+      "id": "DB_DATABASE",
+      "label": "Database Path",
+      "defaultValue": "/var/www/html/database/database.sqlite",
+      "description": "Path to SQLite database file"
+    }
+  ],
+  "tcpPorts": [],
+  "udpPorts": [],
+  "caproverOneClickApp": {
+    "description": "A Laravel application for managing database backups",
+    "instructions": {
+      "start": "Configure your database settings and deploy. The app includes Filament admin panel for management.",
+      "end": "Access your app and go to /admin to set up the admin user."
+    },
+    "displayName": "Laravel DB Backuper",
+    "documentation": "https://filamentphp.com/docs"
+  },
+  "resourceConfig": {
+    "cpu": 2,
+    "memory": 4
+  }
+}
