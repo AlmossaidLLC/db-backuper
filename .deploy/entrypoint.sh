@@ -8,19 +8,16 @@
 #   sleep 1
 # done
 
-# Put Laravel application into maintenance mode before running migrations and seeders
 php artisan down
 echo "Application is in maintenance mode."
 
 echo "Running migrations and seeders..."
-# Run Laravel migrations and seeders
-php artisan migrate --seed
+php artisan migrate --seed --force
 
 echo "Migrations and seeders completed."
 
 
 echo "Running the application..."
-# Bring the application out of maintenance mode
 php artisan up
 
 # Execute the main command (supervisord)
