@@ -30,6 +30,10 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Copy the rest of the application
 COPY . .
 
+# Copy and set entrypoint
+COPY .deploy/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
@@ -47,5 +51,6 @@ RUN echo "* * * * * /usr/local/bin/php /var/www/html/artisan schedule:run >> /de
 # Expose port 80 for Caddy (will be handled by Caprover)
 EXPOSE 80
 
-# Start supervisor to manage processes
+# Set entrypoint and default command
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
