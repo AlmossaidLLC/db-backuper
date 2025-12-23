@@ -41,8 +41,14 @@
       "description": "Path to SQLite database file"
     }
   ],
-  "tcpPorts": [],
-  "udpPorts": [],
+  "persistentDirectories": [
+    {
+      "containerPath": "/var/www/html/database"
+    },
+    {
+      "containerPath": "/var/www/html/storage"
+    }
+  ],
   "caproverOneClickApp": {
     "description": "A Laravel application for managing database backups",
     "instructions": {
