@@ -16,7 +16,6 @@ php artisan migrate --seed --force
 
 echo "Migrations and seeders completed."
 
-
 echo "Running the application..."
 php artisan up
 
