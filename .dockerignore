@@ -1,0 +1,70 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+docs/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.phpunit.result.cache
+tests/
+phpunit.xml
+.phpunit.cache/
+
+# Development
+.env
+.env.*
+!.env.example
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Build artifacts
+public/hot
+public/storage
+public/build
+public/css
+public/js
+public/mix-manifest.json
+
+# Storage (will be mounted as volume)
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+!storage/logs/.gitignore
+!storage/framework/cache/.gitignore
+!storage/framework/sessions/.gitignore
+!storage/framework/views/.gitignore
+
+# Cache
+bootstrap/cache/*
+!bootstrap/cache/.gitignore
+
+# Docker
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Deployment (keep .deploy directory)
+!.deploy/
+
+# Misc
+*.log
+supervisord.log
+captain-definition
+

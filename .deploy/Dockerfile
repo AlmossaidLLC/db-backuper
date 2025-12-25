@@ -10,14 +10,24 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 
+# Copy only composer files for better layer caching
 COPY composer.json composer.lock ./
 
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+# Install dependencies with optimizations
+RUN composer install \
+    --no-dev \
+    --optimize-autoloader \
+    --no-interaction \
+    --no-scripts \
+    --prefer-dist \
+    --no-plugins \
+    --no-suggest \
+    && composer clear-cache
 
 # Runtime stage
 FROM php:8.3-fpm-alpine
 
-# Install runtime dependencies and build tools (remove build tools after)
+# Install runtime dependencies only
 RUN apk add --no-cache \
     libpng \
     libjpeg-turbo \
@@ -26,18 +36,32 @@ RUN apk add --no-cache \
     oniguruma \
     mysql-client \
     supervisor \
-    dcron \
     caddy \
     icu \
+    && rm -rf /var/cache/apk/*
+
+# Install PHP extensions with build dependencies cleaned in same layer
+RUN apk add --no-cache --virtual .build-deps \
     libpng-dev \
     libjpeg-turbo-dev \
     freetype-dev \
     libzip-dev \
     oniguruma-dev \
     icu-dev \
+    $PHPIZE_DEPS \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip intl \
-    && apk del libpng-dev libjpeg-turbo-dev freetype-dev libzip-dev oniguruma-dev icu-dev
+    && docker-php-ext-install -j$(nproc) \
+        opcache \
+        pdo_mysql \
+        mbstring \
+        exif \
+        pcntl \
+        bcmath \
+        gd \
+        zip \
+        intl \
+    && apk del .build-deps \
+    && rm -rf /tmp/* /var/cache/apk/*
 
 # Set working directory
 WORKDIR /var/www/html
@@ -45,28 +69,48 @@ WORKDIR /var/www/html
 # Copy vendor from build stage
 COPY --from=build /app/vendor ./vendor
 
-# Copy the rest of the application
-COPY . .
-
-# Copy and set entrypoint
+# Copy deployment configuration files (change less frequently, better layer caching)
 COPY .deploy/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY .deploy/supervisord.conf /etc/supervisord.conf
+COPY .deploy/Caddyfile /etc/caddy/Caddyfile
+COPY .deploy/php.ini /usr/local/etc/php/conf.d/custom.ini
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html \
+# Copy application code
+COPY . .
+
+# Production optimizations: clean up unnecessary files and set permissions
+RUN rm -rf \
+    tests \
+    .git \
+    .github \
+    node_modules \
+    storage/logs/* \
+    storage/framework/cache/* \
+    storage/framework/sessions/* \
+    storage/framework/views/* \
+    bootstrap/cache/* \
+    && chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
-    && mkdir -p /var/log/supervisor /var/log/php8.3-fpm
+    && chmod -R 755 /var/www/html/bootstrap/cache \
+    && mkdir -p /var/log/supervisor /var/log/php8.3-fpm \
+    && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/log/php8.3-fpm \
+    && chmod 755 /var/log/supervisor
 
-# Copy supervisor configuration
-COPY .deploy/supervisord.conf /etc/supervisord.conf
+# Optimize PHP-FPM pool configuration for production (ondemand mode saves resources)
+RUN sed -i \
+    -e 's/^pm = dynamic/pm = ondemand/' \
+    -e 's/^pm.max_children = 5/pm.max_children = 50/' \
+    -e 's/^pm.process_idle_timeout = 10s/pm.process_idle_timeout = 10s/' \
+    -e 's/^;pm.max_requests = 500/pm.max_requests = 500/' \
+    -e 's/^;clear_env = no/clear_env = no/' \
+    /usr/local/etc/php-fpm.d/www.conf
 
-# Copy Caddy configuration
-COPY .deploy/Caddyfile /etc/caddy/Caddyfile
+# Health check (check if PHP-FPM process is running)
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+    CMD ps aux | grep -q '[p]hp-fpm' || exit 1
 
-# Copy cron job for Laravel scheduler
-RUN echo "* * * * * /usr/local/bin/php /var/www/html/artisan schedule:run >> /dev/null 2>&1" > /etc/crontabs/www-data
-
-# Expose port 80 for Caddy (will be handled by Caprover)
+# Expose port 80 for Caddy
 EXPOSE 80
 
 # Set entrypoint and default command
