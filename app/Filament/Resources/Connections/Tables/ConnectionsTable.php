@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Connections\Tables;
 
+use App\Jobs\CreateManualBackupJob;
 use App\Models\Connection;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -76,7 +77,7 @@ class ConnectionsTable
             ])
             ->recordActions([
                 Action::make('test')
-                    ->label('Test')
+                    ->label('Test Connection')
                     ->icon('heroicon-o-beaker')
                     ->color('success')
                     ->action(function (Connection $record) {
@@ -95,6 +96,30 @@ class ConnectionsTable
                                 ->body($result['message'])
                                 ->send();
                         }
+                    }),
+                Action::make('backup')
+                    ->label('Create Backup')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('info')
+                    ->requiresConfirmation()
+                    ->modalHeading('Create Test Backup')
+                    ->modalDescription('This will queue a backup of the database. You will receive an email notification when the backup is complete.')
+                    ->form([
+                        \Filament\Forms\Components\TextInput::make('email')
+                            ->label('Email Address')
+                            ->email()
+                            ->required()
+                            ->default(fn () => auth()->user()?->email)
+                            ->helperText('The backup will be sent to this email address when complete'),
+                    ])
+                    ->action(function (Connection $record, array $data) {
+                        CreateManualBackupJob::dispatch($record, $data['email']);
+
+                        Notification::make()
+                            ->title('Backup Queued Successfully!')
+                            ->success()
+                            ->body('The backup has been queued and will be processed shortly. You will receive an email notification at ' . $data['email'] . ' when the backup is complete.')
+                            ->send();
                     }),
                 EditAction::make(),
                 DeleteAction::make(),

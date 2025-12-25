@@ -11,6 +11,12 @@
 php artisan down
 echo "Application is in maintenance mode."
 
+echo "Installing/updating dependencies..."
+composer install --no-interaction --optimize-autoloader || echo "Composer install failed or already up to date"
+
+echo "Regenerating autoloader..."
+composer dump-autoload --no-interaction --optimize || echo "Autoloader regeneration failed"
+
 echo "Running migrations and seeders..."
 php artisan migrate --seed --force
 

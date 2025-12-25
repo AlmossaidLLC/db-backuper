@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -110,7 +111,7 @@ class Connection extends Model
         }
     }
 
-    protected function getConnectionConfig(): array
+    public function getConnectionConfig(): array
     {
         $config = [
             'driver' => $this->type,
@@ -161,5 +162,15 @@ class Connection extends Model
         }
 
         return $config;
+    }
+
+    public function backups(): HasMany
+    {
+        return $this->hasMany(Backup::class);
+    }
+
+    public function schedules(): HasMany
+    {
+        return $this->hasMany(Schedule::class);
     }
 }
