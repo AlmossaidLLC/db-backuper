@@ -41,7 +41,10 @@ class ConnectionForm
                                             ->native(false),
                                     ]),
                             ])
-                            ->extraAttributes(['class' => 'flex flex-col']),
+                            ->extraAttributes([
+                                'class' => 'flex flex-col',
+                                'style' => 'height: 100%',
+                            ]),
 
                         Section::make('Server Configuration')
                             ->schema([
@@ -95,7 +98,10 @@ class ConnectionForm
                                             ->placeholder('••••••••'),
                                     ]),
                             ])
-                            ->extraAttributes(['class' => 'flex flex-col']),
+                            ->extraAttributes([
+                                'class' => 'flex flex-col',
+                                'style' => 'height: 100%',
+                            ]),
                     ])
                     ->extraAttributes(['class' => 'items-stretch'])
                     ->columnSpanFull(),

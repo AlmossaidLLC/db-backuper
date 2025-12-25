@@ -18,7 +18,7 @@ class CreateConnection extends CreateRecord
             Action::make('test')
                 ->label('Test Connection')
                 ->icon('heroicon-o-beaker')
-                ->color('warning')
+                ->color('success')
                 ->requiresConfirmation()
                 ->modalHeading('Test Database Connection')
                 ->modalDescription('This will test the connection with the current form values. Make sure all required fields are filled.')

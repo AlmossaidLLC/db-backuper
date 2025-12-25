@@ -18,11 +18,11 @@ class EditConnection extends EditRecord
             Action::make('test')
                 ->label('Test Connection')
                 ->icon('heroicon-o-beaker')
-                ->color('warning')
+                ->color('success')
                 ->action(function () {
                     // Use current form data if modified, otherwise use saved data
                     $data = $this->form->getState();
-                    
+
                     // Transform extra data from repeater format to flat array
                     if (isset($data['extra']) && is_array($data['extra'])) {
                         $transformed = [];
@@ -33,13 +33,13 @@ class EditConnection extends EditRecord
                         }
                         $data['extra'] = $transformed;
                     }
-                    
+
                     // Create a temporary connection instance for testing
                     $tempConnection = new \App\Models\Connection();
                     $tempConnection->fill($data);
-                    
+
                     $result = $tempConnection->testConnection();
-                    
+
                     if ($result['success']) {
                         Notification::make()
                             ->title('Connection Successful!')

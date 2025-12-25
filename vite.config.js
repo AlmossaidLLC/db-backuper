@@ -5,7 +5,11 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js'],
+            input: [
+                'resources/css/app.css',
+                'resources/js/app.js',
+                'vendor/resma/filament-awin-theme/resources/css/theme.css'
+            ],
             refresh: true,
         }),
         tailwindcss(),

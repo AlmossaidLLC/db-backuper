@@ -6,6 +6,7 @@ use App\Models\Connection;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
 use Filament\Notifications\Notification;
 use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
@@ -77,7 +78,7 @@ class ConnectionsTable
                 Action::make('test')
                     ->label('Test')
                     ->icon('heroicon-o-beaker')
-                    ->color('warning')
+                    ->color('success')
                     ->action(function (Connection $record) {
                         $result = $record->testConnection();
 
@@ -96,6 +97,7 @@ class ConnectionsTable
                         }
                     }),
                 EditAction::make(),
+                DeleteAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
