@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "dockerfilePath": ".deploy/Dockerfile",
+  "dockerfilePath": ".deploy/production/Dockerfile",
   "serviceName": "db-backuper",
   "description": "Laravel Database Backuper with Filament Admin",
   "instructions": {

@@ -47,7 +47,7 @@ A Laravel application with Filament admin panel for managing database backups us
 To build the Docker image for production:
 
 ```bash
-docker build -f .deploy/Dockerfile -t db-backuper:latest .
+docker build -f .deploy/production/Dockerfile -t db-backuper:latest .
 ```
 
 ## Docker Run
@@ -56,16 +56,19 @@ To run the container with live syncing (recommended for development):
 
 ```bash
 docker run -d \
-  --name db-backuper \
-  -p 9033:80 \
-  -v $(pwd):/var/www/html \
-  -v $(pwd)/database:/var/www/html/database \
-  -e APP_KEY=your_generated_key_here \
-  -e DB_CONNECTION=sqlite \
-  db-backuper:latest
+    --name db-backuper \
+    -p 9033:80 \
+    -v $(pwd):/var/www/html \
+    -v $(pwd)/database:/var/www/html/database \
+    -e APP_KEY=$(grep "^APP_KEY=" .env | cut -d '=' -f2-) \
+    -e DB_CONNECTION=sqlite \
+    db-backuper:latest
 ```
 
-**Note**: Replace `your_generated_key_here` with the output of `php artisan key:generate --show`.
+```bash
+docker-compose build \
+    docker-compose up -d 
+```
 
 ## Caprover Deployment
 

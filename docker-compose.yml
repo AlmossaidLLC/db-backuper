@@ -1,10 +1,10 @@
-version: '3.8'
-
 services:
   app:
     build:
+      tags:
+        - db-backuper:dev
       context: .
-      dockerfile: .deploy/Dockerfile
+      dockerfile: .deploy/development/Dockerfile
     ports:
       - "${APP_PORT:-9033}:80"
     environment:
@@ -16,5 +16,4 @@ services:
       DB_CONNECTION: sqlite
       DB_DATABASE: /var/www/html/database/database.sqlite
     volumes:
-      - ./database:/var/www/html/database  # Mount database directory for SQLite persistence
-      - ./storage:/var/www/html/storage  # Mount storage for logs and cache
+      - '.:/var/www/html'

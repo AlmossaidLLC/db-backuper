@@ -24,3 +24,4 @@ php artisan up
 
 # Execute the main command (supervisord)
 exec "$@"
+

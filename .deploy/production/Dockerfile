@@ -13,15 +13,12 @@ WORKDIR /app
 # Copy only composer files for better layer caching
 COPY composer.json composer.lock ./
 
-# Install dependencies with optimizations
+# Install production dependencies only
 RUN composer install \
     --no-dev \
     --optimize-autoloader \
     --no-interaction \
-    --no-scripts \
     --prefer-dist \
-    --no-plugins \
-    --no-suggest \
     && composer clear-cache
 
 # Runtime stage
@@ -51,7 +48,6 @@ RUN apk add --no-cache --virtual .build-deps \
     $PHPIZE_DEPS \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
-        opcache \
         pdo_mysql \
         mbstring \
         exif \
@@ -70,10 +66,10 @@ WORKDIR /var/www/html
 COPY --from=build /app/vendor ./vendor
 
 # Copy deployment configuration files (change less frequently, better layer caching)
-COPY .deploy/entrypoint.sh /usr/local/bin/entrypoint.sh
-COPY .deploy/supervisord.conf /etc/supervisord.conf
-COPY .deploy/Caddyfile /etc/caddy/Caddyfile
-COPY .deploy/php.ini /usr/local/etc/php/conf.d/custom.ini
+COPY .deploy/production/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY .deploy/production/supervisord.conf /etc/supervisord.conf
+COPY .deploy/production/Caddyfile /etc/caddy/Caddyfile
+COPY .deploy/production/php.ini /usr/local/etc/php/conf.d/custom.ini
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Copy application code
@@ -116,3 +112,4 @@ EXPOSE 80
 # Set entrypoint and default command
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+
