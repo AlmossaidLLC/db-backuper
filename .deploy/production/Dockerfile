@@ -13,12 +13,13 @@ WORKDIR /app
 # Copy only composer files for better layer caching
 COPY composer.json composer.lock ./
 
-# Install production dependencies only
+# Install production dependencies only (skip scripts since artisan doesn't exist yet)
 RUN composer install \
     --no-dev \
     --optimize-autoloader \
     --no-interaction \
     --prefer-dist \
+    --no-scripts \
     && composer clear-cache
 
 # Runtime stage
@@ -74,6 +75,9 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Copy application code
 COPY . .
+
+# Run Laravel post-install scripts (package discovery)
+RUN php artisan package:discover --ansi || true
 
 # Production optimizations: clean up unnecessary files and set permissions
 RUN rm -rf \
