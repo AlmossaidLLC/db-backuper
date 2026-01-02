@@ -14,7 +14,7 @@ class Schedule extends Model
         'cron_expression',
         'frequency',
         'is_active',
-        'notification_email',
+        'notification_emails',
         'last_run_at',
         'next_run_at',
     ];
@@ -25,6 +25,7 @@ class Schedule extends Model
             'is_active' => 'boolean',
             'last_run_at' => 'datetime',
             'next_run_at' => 'datetime',
+            'notification_emails' => 'array',
         ];
     }
 
@@ -69,7 +70,7 @@ class Schedule extends Model
     protected function getNextRunFromCron(): \Carbon\Carbon
     {
         $parts = explode(' ', $this->cron_expression);
-        
+
         if (count($parts) !== 5) {
             return now()->addDay();
         }

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('cron_expression');
             $table->string('frequency')->default('custom'); // hourly, daily, weekly, monthly, custom
             $table->boolean('is_active')->default(true);
-            $table->string('notification_email')->nullable();
+            $table->json('notification_emails')->nullable();
             $table->timestamp('last_run_at')->nullable();
             $table->timestamp('next_run_at')->nullable();
             $table->timestamps();

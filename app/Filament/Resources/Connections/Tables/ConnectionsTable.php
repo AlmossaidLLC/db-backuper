@@ -10,6 +10,7 @@ use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
 use Filament\Notifications\Notification;
 use Filament\Actions\Action;
+use Filament\Forms\Components\TagsInput;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -105,20 +106,34 @@ class ConnectionsTable
                     ->modalHeading('Create Test Backup')
                     ->modalDescription('This will queue a backup of the database. You will receive an email notification when the backup is complete.')
                     ->form([
-                        \Filament\Forms\Components\TextInput::make('email')
-                            ->label('Email Address')
-                            ->email()
+                        TagsInput::make('emails')
+                            ->label('Email Addresses')
                             ->required()
-                            ->default(fn () => auth()->user()?->email)
-                            ->helperText('The backup will be sent to this email address when complete'),
+                            ->placeholder('Add email and press Enter')
+                            ->splitKeys(['Tab', ',', ' '])
+                            ->nestedRecursiveRules(['email'])
+                            ->default(fn () => auth()->user()?->email ? [auth()->user()->email] : [])
+                            ->helperText('Email addresses to receive backup notification. Press Enter, Tab, comma, or space to add multiple emails.'),
                     ])
                     ->action(function (Connection $record, array $data) {
-                        CreateManualBackupJob::dispatch($record, $data['email']);
+                        $emails = array_filter($data['emails'] ?? []);
 
+                        if (empty($emails)) {
+                            Notification::make()
+                                ->title('No Email Provided')
+                                ->warning()
+                                ->body('Please provide at least one email address.')
+                                ->send();
+                            return;
+                        }
+
+                        CreateManualBackupJob::dispatch($record, $emails);
+
+                        $emailList = implode(', ', $emails);
                         Notification::make()
                             ->title('Backup Queued Successfully!')
                             ->success()
-                            ->body('The backup has been queued and will be processed shortly. You will receive an email notification at ' . $data['email'] . ' when the backup is complete.')
+                            ->body('The backup has been queued and will be processed shortly. Notification will be sent to: ' . $emailList)
                             ->send();
                     }),
                 EditAction::make(),

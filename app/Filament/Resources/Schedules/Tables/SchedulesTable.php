@@ -58,9 +58,9 @@ class SchedulesTable
                     ->onColor('success')
                     ->offColor('danger'),
 
-                TextColumn::make('notification_email')
-                    ->label('Notification Email')
-                    ->searchable()
+                TextColumn::make('notification_emails')
+                    ->label('Notification Emails')
+                    ->badge()
                     ->toggleable(),
 
                 TextColumn::make('last_run_at')

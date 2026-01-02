@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Schedules\Schemas;
 
 use App\Models\Connection;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Grid;
@@ -62,11 +63,12 @@ class ScheduleForm
                                     ->visible(fn (callable $get) => $get('frequency') === 'custom')
                                     ->default('0 0 * * *'),
 
-                                TextInput::make('notification_email')
-                                    ->label('Notification Email')
-                                    ->email()
-                                    ->maxLength(255)
-                                    ->helperText('Email address to receive backup notifications'),
+                                TagsInput::make('notification_emails')
+                                    ->label('Notification Emails')
+                                    ->placeholder('Add email and press Enter')
+                                    ->splitKeys(['Tab', ',', ' '])
+                                    ->nestedRecursiveRules(['email'])
+                                    ->helperText('Email addresses to receive backup notifications. Press Enter, Tab, comma, or space to add multiple emails.'),
 
                                 Toggle::make('is_active')
                                     ->label('Active')

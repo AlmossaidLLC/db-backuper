@@ -39,41 +39,47 @@ class RunBackupJob implements ShouldQueue
             $this->schedule->calculateNextRun();
             $this->schedule->save();
 
-            if ($this->schedule->notification_email && \App\Services\MailSettingsService::isConfigured()) {
+            if (!empty($this->schedule->notification_emails) && \App\Services\MailSettingsService::isConfigured()) {
                 // Email failure won't affect backup success
-                try {
-                    \App\Jobs\SendBackupNotificationJob::dispatch($backup, $this->schedule->notification_email);
-                } catch (\Exception $emailException) {
-                    // Log but don't fail - backup was successful
-                    \Illuminate\Support\Facades\Log::warning('Failed to dispatch email notification', [
-                        'backup_id' => $backup->id,
-                        'schedule_id' => $this->schedule->id,
-                        'error' => $emailException->getMessage(),
-                    ]);
+                foreach ($this->schedule->notification_emails as $email) {
+                    try {
+                        \App\Jobs\SendBackupNotificationJob::dispatch($backup, $email);
+                    } catch (\Exception $emailException) {
+                        // Log but don't fail - backup was successful
+                        \Illuminate\Support\Facades\Log::warning('Failed to dispatch email notification', [
+                            'backup_id' => $backup->id,
+                            'schedule_id' => $this->schedule->id,
+                            'email' => $email,
+                            'error' => $emailException->getMessage(),
+                        ]);
+                    }
                 }
-            } elseif ($this->schedule->notification_email) {
+            } elseif (!empty($this->schedule->notification_emails)) {
                 \Illuminate\Support\Facades\Log::info('Email notification skipped: SMTP settings not configured', [
                     'backup_id' => $backup->id,
                     'schedule_id' => $this->schedule->id,
-                    'email' => $this->schedule->notification_email,
+                    'emails' => $this->schedule->notification_emails,
                 ]);
             }
         } catch (\Exception $e) {
             $failedBackup = $this->schedule->backups()->latest()->first();
-            if ($this->schedule->notification_email && $failedBackup && \App\Services\MailSettingsService::isConfigured()) {
+            if (!empty($this->schedule->notification_emails) && $failedBackup && \App\Services\MailSettingsService::isConfigured()) {
                 // Try to send failure notification, but don't fail if it doesn't work
-                try {
-                    \App\Jobs\SendBackupNotificationJob::dispatch(
-                        $failedBackup,
-                        $this->schedule->notification_email,
-                        $e->getMessage()
-                    );
-                } catch (\Exception $emailException) {
-                    \Illuminate\Support\Facades\Log::warning('Failed to dispatch failure email notification', [
-                        'backup_id' => $failedBackup->id,
-                        'schedule_id' => $this->schedule->id,
-                        'error' => $emailException->getMessage(),
-                    ]);
+                foreach ($this->schedule->notification_emails as $email) {
+                    try {
+                        \App\Jobs\SendBackupNotificationJob::dispatch(
+                            $failedBackup,
+                            $email,
+                            $e->getMessage()
+                        );
+                    } catch (\Exception $emailException) {
+                        \Illuminate\Support\Facades\Log::warning('Failed to dispatch failure email notification', [
+                            'backup_id' => $failedBackup->id,
+                            'schedule_id' => $this->schedule->id,
+                            'email' => $email,
+                            'error' => $emailException->getMessage(),
+                        ]);
+                    }
                 }
             }
             throw $e;

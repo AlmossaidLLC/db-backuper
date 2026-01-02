@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('file_path');
             $table->string('file_name');
             $table->unsignedBigInteger('file_size')->nullable();
+            $table->string('storage_driver')->default('local');
             $table->enum('status', ['pending', 'running', 'completed', 'failed'])->default('pending');
             $table->text('error_message')->nullable();
             $table->timestamp('completed_at')->nullable();

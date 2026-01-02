@@ -15,9 +15,12 @@ class CreateManualBackupJob implements ShouldQueue
     public $timeout = 300; // 5 minutes timeout
     public $tries = 3; // Retry 3 times on failure
 
+    /**
+     * @param array<string> $emails
+     */
     public function __construct(
         public Connection $dbConnection,
-        public string $email
+        public array $emails
     ) {}
 
     public function handle(BackupService $backupService): void
@@ -27,34 +30,40 @@ class CreateManualBackupJob implements ShouldQueue
 
             // Dispatch email sending in a separate job to avoid blocking
             // Email failure won't affect backup success
-            if (\App\Services\MailSettingsService::isConfigured()) {
-                try {
-                    \App\Jobs\SendBackupNotificationJob::dispatch($backup, $this->email);
-                } catch (\Exception $emailException) {
-                    // Log but don't fail - backup was successful
-                    \Illuminate\Support\Facades\Log::warning('Failed to dispatch email notification', [
-                        'backup_id' => $backup->id,
-                        'error' => $emailException->getMessage(),
-                    ]);
+            if (\App\Services\MailSettingsService::isConfigured() && !empty($this->emails)) {
+                foreach ($this->emails as $email) {
+                    try {
+                        \App\Jobs\SendBackupNotificationJob::dispatch($backup, $email);
+                    } catch (\Exception $emailException) {
+                        // Log but don't fail - backup was successful
+                        \Illuminate\Support\Facades\Log::warning('Failed to dispatch email notification', [
+                            'backup_id' => $backup->id,
+                            'email' => $email,
+                            'error' => $emailException->getMessage(),
+                        ]);
+                    }
                 }
-            } else {
+            } elseif (!empty($this->emails)) {
                 \Illuminate\Support\Facades\Log::info('Email notification skipped: SMTP settings not configured', [
                     'backup_id' => $backup->id,
-                    'email' => $this->email,
+                    'emails' => $this->emails,
                 ]);
             }
         } catch (\Exception $e) {
             $backup = $this->dbConnection->backups()->latest()->first();
 
-            if ($backup && \App\Services\MailSettingsService::isConfigured()) {
+            if ($backup && \App\Services\MailSettingsService::isConfigured() && !empty($this->emails)) {
                 // Try to send failure notification, but don't fail if it doesn't work
-                try {
-                    \App\Jobs\SendBackupNotificationJob::dispatch($backup, $this->email, $e->getMessage());
-                } catch (\Exception $emailException) {
-                    \Illuminate\Support\Facades\Log::warning('Failed to dispatch failure email notification', [
-                        'backup_id' => $backup->id,
-                        'error' => $emailException->getMessage(),
-                    ]);
+                foreach ($this->emails as $email) {
+                    try {
+                        \App\Jobs\SendBackupNotificationJob::dispatch($backup, $email, $e->getMessage());
+                    } catch (\Exception $emailException) {
+                        \Illuminate\Support\Facades\Log::warning('Failed to dispatch failure email notification', [
+                            'backup_id' => $backup->id,
+                            'email' => $email,
+                            'error' => $emailException->getMessage(),
+                        ]);
+                    }
                 }
             }
 
