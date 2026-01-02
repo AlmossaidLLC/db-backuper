@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\Connection;
 use App\Models\Schedule;
 use App\Services\BackupService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -21,7 +22,12 @@ class RunBackupJob implements ShouldQueue
 
     public function handle(BackupService $backupService): void
     {
+        /** @var Connection|null $connection */
         $connection = $this->schedule->connection;
+
+        if (!$connection) {
+            throw new \Exception('Connection not found for schedule');
+        }
 
         try {
             $backup = $backupService->createBackup($connection, $this->schedule);
@@ -33,7 +39,7 @@ class RunBackupJob implements ShouldQueue
             $this->schedule->calculateNextRun();
             $this->schedule->save();
 
-            if ($this->schedule->notification_email) {
+            if ($this->schedule->notification_email && \App\Services\MailSettingsService::isConfigured()) {
                 // Email failure won't affect backup success
                 try {
                     \App\Jobs\SendBackupNotificationJob::dispatch($backup, $this->schedule->notification_email);
@@ -45,10 +51,16 @@ class RunBackupJob implements ShouldQueue
                         'error' => $emailException->getMessage(),
                     ]);
                 }
+            } elseif ($this->schedule->notification_email) {
+                \Illuminate\Support\Facades\Log::info('Email notification skipped: SMTP settings not configured', [
+                    'backup_id' => $backup->id,
+                    'schedule_id' => $this->schedule->id,
+                    'email' => $this->schedule->notification_email,
+                ]);
             }
         } catch (\Exception $e) {
             $failedBackup = $this->schedule->backups()->latest()->first();
-            if ($this->schedule->notification_email && $failedBackup) {
+            if ($this->schedule->notification_email && $failedBackup && \App\Services\MailSettingsService::isConfigured()) {
                 // Try to send failure notification, but don't fail if it doesn't work
                 try {
                     \App\Jobs\SendBackupNotificationJob::dispatch(

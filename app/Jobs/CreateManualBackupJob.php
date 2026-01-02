@@ -27,19 +27,26 @@ class CreateManualBackupJob implements ShouldQueue
 
             // Dispatch email sending in a separate job to avoid blocking
             // Email failure won't affect backup success
-            try {
-                \App\Jobs\SendBackupNotificationJob::dispatch($backup, $this->email);
-            } catch (\Exception $emailException) {
-                // Log but don't fail - backup was successful
-                \Illuminate\Support\Facades\Log::warning('Failed to dispatch email notification', [
+            if (\App\Services\MailSettingsService::isConfigured()) {
+                try {
+                    \App\Jobs\SendBackupNotificationJob::dispatch($backup, $this->email);
+                } catch (\Exception $emailException) {
+                    // Log but don't fail - backup was successful
+                    \Illuminate\Support\Facades\Log::warning('Failed to dispatch email notification', [
+                        'backup_id' => $backup->id,
+                        'error' => $emailException->getMessage(),
+                    ]);
+                }
+            } else {
+                \Illuminate\Support\Facades\Log::info('Email notification skipped: SMTP settings not configured', [
                     'backup_id' => $backup->id,
-                    'error' => $emailException->getMessage(),
+                    'email' => $this->email,
                 ]);
             }
         } catch (\Exception $e) {
             $backup = $this->dbConnection->backups()->latest()->first();
 
-            if ($backup) {
+            if ($backup && \App\Services\MailSettingsService::isConfigured()) {
                 // Try to send failure notification, but don't fail if it doesn't work
                 try {
                     \App\Jobs\SendBackupNotificationJob::dispatch($backup, $this->email, $e->getMessage());

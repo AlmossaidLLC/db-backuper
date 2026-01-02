@@ -3,8 +3,10 @@
 namespace App\Jobs;
 
 use App\Models\Backup;
+use App\Services\MailSettingsService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class SendBackupNotificationJob implements ShouldQueue
@@ -22,12 +24,24 @@ class SendBackupNotificationJob implements ShouldQueue
 
     public function handle(): void
     {
+        // Check if SMTP is configured before attempting to send
+        if (!MailSettingsService::isConfigured()) {
+            Log::warning('Email notification skipped: SMTP settings not configured', [
+                'backup_id' => $this->backup->id,
+                'email' => $this->email,
+            ]);
+            return;
+        }
+
+        // Configure mail settings dynamically
+        MailSettingsService::configureMail();
+
         try {
             Mail::to($this->email)
                 ->send(new \App\Mail\BackupNotification($this->backup, $this->errorMessage));
         } catch (\Exception $e) {
             // Log email failure but don't fail the job - backup was successful
-            \Illuminate\Support\Facades\Log::warning('Failed to send backup notification email', [
+            Log::warning('Failed to send backup notification email', [
                 'backup_id' => $this->backup->id,
                 'email' => $this->email,
                 'error' => $e->getMessage(),

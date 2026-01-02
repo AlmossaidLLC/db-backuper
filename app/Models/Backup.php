@@ -13,6 +13,7 @@ class Backup extends Model
         'file_path',
         'file_name',
         'file_size',
+        'storage_driver',
         'status',
         'error_message',
         'completed_at',
