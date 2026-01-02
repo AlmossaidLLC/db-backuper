@@ -141,6 +141,17 @@ Built with **Laravel 12** and **Filament v4**, it provides a beautiful, intuitiv
 
 7. **Access the application** at `http://localhost:8000`
 
+### Default Login Credentials
+
+After running migrations with seeders (`php artisan migrate --seed`), you can log in with:
+
+| Field    | Value           |
+|----------|-----------------|
+| Email    | `demo@demo.com` |
+| Password | `backuper`      |
+
+> ⚠️ **Security Note:** Change these credentials immediately in production environments.
+
 ---
 
 ## 🐳 Docker Deployment
