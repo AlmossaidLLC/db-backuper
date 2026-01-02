@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <!-- Gradient for the shield -->
+    <linearGradient id="shieldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4f46e5;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Gradient for the database cylinder -->
+    <linearGradient id="dbGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e0e7ff;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Shadow filter -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#4338ca" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Shield background -->
+  <path d="M60 8 L105 25 L105 55 C105 80 85 100 60 112 C35 100 15 80 15 55 L15 25 Z"
+        fill="url(#shieldGradient)"
+        filter="url(#shadow)"/>
+
+  <!-- Shield inner highlight -->
+  <path d="M60 14 L98 28 L98 54 C98 75 80 93 60 104 C40 93 22 75 22 54 L22 28 Z"
+        fill="none"
+        stroke="#818cf8"
+        stroke-width="1.5"
+        opacity="0.5"/>
+
+  <!-- Database cylinder - top ellipse -->
+  <ellipse cx="60" cy="38" rx="24" ry="8" fill="url(#dbGradient)" opacity="0.95"/>
+
+  <!-- Database cylinder - body -->
+  <path d="M36 38 L36 68 C36 72.5 46.7 76 60 76 C73.3 76 84 72.5 84 68 L84 38 C84 42.5 73.3 46 60 46 C46.7 46 36 42.5 36 38 Z"
+        fill="url(#dbGradient)"
+        opacity="0.95"/>
+
+  <!-- Database cylinder - middle line -->
+  <ellipse cx="60" cy="53" rx="24" ry="8" fill="none" stroke="#6366f1" stroke-width="1.5" opacity="0.6"/>
+
+  <!-- Database cylinder - bottom line -->
+  <ellipse cx="60" cy="68" rx="24" ry="8" fill="none" stroke="#6366f1" stroke-width="1.5" opacity="0.6"/>
+
+  <!-- Circular arrow (backup/sync icon) -->
+  <g transform="translate(60, 83)">
+    <!-- Arrow circle -->
+    <path d="M-12 0 A12 12 0 1 1 0 12"
+          fill="none"
+          stroke="#ffffff"
+          stroke-width="2.5"
+          stroke-linecap="round"/>
+    <!-- Arrow head -->
+    <polygon points="-5,10 -12,4 -12,12" fill="#ffffff"/>
+
+    <!-- Second arrow for rotation effect -->
+    <path d="M12 0 A12 12 0 1 1 0 -12"
+          fill="none"
+          stroke="#ffffff"
+          stroke-width="2.5"
+          stroke-linecap="round"/>
+    <!-- Second arrow head -->
+    <polygon points="5,-10 12,-4 12,-12" fill="#ffffff"/>
+  </g>
+
+  <!-- Checkmark badge -->
+  <circle cx="90" cy="30" r="12" fill="#22c55e" filter="url(#shadow)"/>
+  <path d="M84 30 L88 34 L96 26"
+        fill="none"
+        stroke="#ffffff"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+</svg>

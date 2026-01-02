@@ -30,8 +30,14 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->globalSearch(false)
+            ->brandName('DB Backuper')
+            ->brandLogo(asset('images/logo-banner.svg'))
+            ->darkModeBrandLogo(asset('images/logo-banner-dark.svg'))
+            ->brandLogoHeight('2.5rem')
+            ->favicon(asset('images/favicon.svg'))
             ->colors([
-                'primary' => Color::Sky,
+                'primary' => Color::Indigo,
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->resources([
@@ -47,7 +53,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->plugins([
                 FilamentAwinTheme::make()
-                    ->primaryColor(Color::Sky),
+                    ->primaryColor(Color::Indigo),
             ])
             ->middleware([
                 EncryptCookies::class,

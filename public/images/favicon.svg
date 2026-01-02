@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#4f46e5"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Shield -->
+  <path d="M16 2 L28 7 L28 15 C28 22 23 27 16 30 C9 27 4 22 4 15 L4 7 Z" fill="url(#shieldGrad)"/>
+
+  <!-- Database icon simplified -->
+  <ellipse cx="16" cy="11" rx="6" ry="2" fill="#ffffff" opacity="0.9"/>
+  <path d="M10 11 L10 19 C10 20.1 12.7 21 16 21 C19.3 21 22 20.1 22 19 L22 11" fill="#ffffff" opacity="0.9"/>
+
+  <!-- Sync arrow simplified -->
+  <circle cx="16" cy="24" r="3" fill="none" stroke="#ffffff" stroke-width="1.2"/>
+  <path d="M14 22 L16 24 L14 26" fill="none" stroke="#ffffff" stroke-width="1"/>
+</svg>
