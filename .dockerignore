@@ -30,6 +30,7 @@ phpunit.xml
 .env.*
 !.env.example
 node_modules/
+vendor/
 npm-debug.log
 yarn-error.log
 
@@ -41,7 +42,10 @@ public/css
 public/js
 public/mix-manifest.json
 
-# Storage (will be mounted as volume)
+# Storage (will be mounted as volume) - exclude all content but keep structure
+storage/app/backups/*
+storage/app/private/*
+storage/app/public/*
 storage/logs/*
 storage/framework/cache/*
 storage/framework/sessions/*
@@ -50,6 +54,10 @@ storage/framework/views/*
 !storage/framework/cache/.gitignore
 !storage/framework/sessions/.gitignore
 !storage/framework/views/.gitignore
+!storage/app/.gitignore
+!storage/app/backups/.gitignore
+!storage/app/private/.gitignore
+!storage/app/public/.gitignore
 
 # Cache
 bootstrap/cache/*
