@@ -68,7 +68,7 @@ echo "Putting application in maintenance mode..."
 php artisan down --quiet 2>/dev/null || true
 
 echo "Running database migrations..."
-php artisan migrate --force --quiet
+php artisan migrate --seed --force --quiet
 
 echo "Optimizing application for production..."
 php artisan config:cache --quiet
