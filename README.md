@@ -156,22 +156,36 @@ After running migrations with seeders (`php artisan migrate --seed`), you can lo
 
 ## 🐳 Docker Deployment
 
-### Build the Docker Image
+### Quick Start (Recommended)
+
+Pull and run the pre-built image from Docker Hub:
 
 ```bash
-docker build -f .deploy/production/Dockerfile -t db-backuper:latest .
+docker run -d --name db-backuper -p 9033:80 almossaidllc/db-backuper:latest
 ```
 
-### Run with Docker
+Access the application at `http://localhost:9033`
+
+> The image auto-configures everything: generates `APP_KEY`, creates SQLite database, and runs migrations automatically.
+
+### With Data Persistence
+
+To persist your database and backups across container restarts:
 
 ```bash
 docker run -d \
     --name db-backuper \
     -p 9033:80 \
-    -v $(pwd)/database:/var/www/html/database \
-    -e APP_KEY=$(grep "^APP_KEY=" .env | cut -d '=' -f2-) \
-    -e DB_CONNECTION=sqlite \
-    db-backuper:latest
+    -v db-backuper-data:/var/www/html/database \
+    -v db-backuper-storage:/var/www/html/storage/app \
+    almossaidllc/db-backuper:latest
+```
+
+### Build from Source
+
+```bash
+docker build -f .deploy/production/Dockerfile -t db-backuper:latest .
+docker run -d --name db-backuper -p 9033:80 db-backuper:latest
 ```
 
 ### Run with Docker Compose
