@@ -1,5 +1,5 @@
 # Build stage for Composer dependencies
-FROM php:8.3-cli-alpine AS build
+FROM php:8.3-cli-alpine AS composer-build
 
 # Install extensions required for Composer dependencies
 RUN apk add --no-cache libzip-dev icu-dev \
@@ -21,6 +21,28 @@ RUN composer install \
     --prefer-dist \
     --no-scripts \
     && composer clear-cache
+
+# Build stage for frontend assets
+FROM node:20-alpine AS frontend-build
+
+WORKDIR /app
+
+# Copy package files for better layer caching
+COPY package.json package-lock.json ./
+
+# Install dependencies
+RUN npm ci --no-audit --no-fund
+
+# Copy source files needed for build
+COPY resources ./resources
+COPY vite.config.js ./
+COPY tailwind.config.js* postcss.config.js* ./
+
+# Copy vendor directory (needed for Filament theme CSS)
+COPY --from=composer-build /app/vendor ./vendor
+
+# Build frontend assets
+RUN npm run build
 
 # Runtime stage
 FROM php:8.3-fpm-alpine
@@ -63,8 +85,11 @@ RUN apk add --no-cache --virtual .build-deps \
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy vendor from build stage
-COPY --from=build /app/vendor ./vendor
+# Copy vendor from composer build stage
+COPY --from=composer-build /app/vendor ./vendor
+
+# Copy built frontend assets from frontend build stage
+COPY --from=frontend-build /app/public/build ./public/build
 
 # Copy deployment configuration files (change less frequently, better layer caching)
 COPY .deploy/production/entrypoint.sh /usr/local/bin/entrypoint.sh

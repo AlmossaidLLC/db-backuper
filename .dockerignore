@@ -37,9 +37,6 @@ yarn-error.log
 # Build artifacts
 public/hot
 public/storage
-public/build
-public/css
-public/js
 public/mix-manifest.json
 
 # Storage (will be mounted as volume) - exclude all content but keep structure
