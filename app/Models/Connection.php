@@ -164,6 +164,75 @@ class Connection extends Model
         return $config;
     }
 
+    /**
+     * List all available databases from this connection.
+     *
+     * @return array{success: bool, databases?: array<string>, message?: string}
+     */
+    public function listDatabases(): array
+    {
+        try {
+            $config = $this->getConnectionConfig();
+
+            // Use a system database to connect and list databases
+            if ($this->type === 'mysql') {
+                $config['database'] = 'information_schema';
+            } elseif ($this->type === 'pgsql') {
+                $config['database'] = 'postgres';
+            } elseif ($this->type === 'sqlsrv') {
+                $config['database'] = 'master';
+            }
+
+            config(['database.connections.list_databases' => $config]);
+
+            $databases = [];
+
+            if ($this->type === 'mysql') {
+                $results = DB::connection('list_databases')
+                    ->select('SHOW DATABASES');
+                $databases = array_map(fn ($row) => $row->Database, $results);
+                // Filter out system databases
+                $databases = array_filter($databases, fn ($db) => !in_array($db, [
+                    'information_schema',
+                    'mysql',
+                    'performance_schema',
+                    'sys',
+                ]));
+            } elseif ($this->type === 'pgsql') {
+                $results = DB::connection('list_databases')
+                    ->select("SELECT datname FROM pg_database WHERE datistemplate = false AND datallowconn = true");
+                $databases = array_map(fn ($row) => $row->datname, $results);
+                // Filter out system databases
+                $databases = array_filter($databases, fn ($db) => !in_array($db, [
+                    'postgres',
+                    'template0',
+                    'template1',
+                ]));
+            } elseif ($this->type === 'sqlsrv') {
+                $results = DB::connection('list_databases')
+                    ->select("SELECT name FROM sys.databases WHERE name NOT IN ('master', 'tempdb', 'model', 'msdb')");
+                $databases = array_map(fn ($row) => $row->name, $results);
+            }
+
+            DB::purge('list_databases');
+
+            return [
+                'success' => true,
+                'databases' => array_values($databases),
+            ];
+        } catch (\Exception $e) {
+            Log::error('Failed to list databases', [
+                'connection_id' => $this->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+            ];
+        }
+    }
+
     public function backups(): HasMany
     {
         return $this->hasMany(Backup::class);

@@ -2,12 +2,17 @@
 
 namespace App\Filament\Resources\Connections\Schemas;
 
+use App\Models\Connection;
+use Filament\Actions\Action;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 
 class ConnectionForm
 {
@@ -74,11 +79,82 @@ class ConnectionForm
 
                                 Grid::make(2)
                                     ->schema([
-                                        TextInput::make('db')
+                                        Select::make('db')
                                             ->label('Database Name')
                                             ->required()
-                                            ->maxLength(255)
-                                            ->placeholder('my_database'),
+                                            ->searchable()
+                                            ->getSearchResultsUsing(function (?string $search, Get $get): array {
+                                                $databases = $get('__databases') ?? [];
+
+                                                // If no search term, show all loaded databases
+                                                if (empty($search)) {
+                                                    return $databases;
+                                                }
+
+                                                // Filter databases by search term
+                                                $filtered = array_filter(
+                                                    $databases,
+                                                    fn ($db) => str_contains(strtolower($db), strtolower($search))
+                                                );
+
+                                                // Always include the search term as an option (for custom database names)
+                                                if (!in_array($search, $filtered)) {
+                                                    $filtered = [$search => $search . ' (custom)'] + $filtered;
+                                                }
+
+                                                return $filtered;
+                                            })
+                                            ->getOptionLabelUsing(fn ($value): ?string => $value)
+                                            ->placeholder('Type or select database name')
+                                            ->helperText('Click "Load Databases" to fetch available databases, or type a name manually')
+                                            ->aboveContent(
+                                                Action::make('loadDatabases')
+                                                    ->label('Load Databases')
+                                                    ->icon(Heroicon::ArrowPath)
+                                                    ->color('gray')
+                                                    ->size('sm')
+                                                    ->action(function (Get $schemaGet, \Filament\Schemas\Components\Utilities\Set $schemaSet) {
+                                                        // Build a temporary connection to test
+                                                        $tempConnection = new Connection();
+                                                        $tempConnection->type = $schemaGet('type');
+                                                        $tempConnection->server = $schemaGet('server');
+                                                        $tempConnection->port = $schemaGet('port');
+                                                        $tempConnection->user = $schemaGet('user');
+                                                        $tempConnection->password = $schemaGet('password');
+                                                        $tempConnection->db = 'information_schema'; // Placeholder
+
+                                                        // Transform extra data from repeater format
+                                                        $extra = $schemaGet('extra');
+                                                        if (is_array($extra)) {
+                                                            $transformed = [];
+                                                            foreach ($extra as $item) {
+                                                                if (isset($item['key']) && isset($item['value']) && !empty($item['key'])) {
+                                                                    $transformed[$item['key']] = $item['value'];
+                                                                }
+                                                            }
+                                                            $tempConnection->extra = $transformed;
+                                                        }
+
+                                                        $result = $tempConnection->listDatabases();
+
+                                                        if ($result['success']) {
+                                                            $databases = array_combine($result['databases'], $result['databases']);
+                                                            $schemaSet('__databases', $databases);
+
+                                                            Notification::make()
+                                                                ->title('Databases Loaded')
+                                                                ->success()
+                                                                ->body('Found ' . count($result['databases']) . ' database(s). Click on the field and type to search.')
+                                                                ->send();
+                                                        } else {
+                                                            Notification::make()
+                                                                ->title('Failed to Load Databases')
+                                                                ->danger()
+                                                                ->body($result['message'])
+                                                                ->send();
+                                                        }
+                                                    })
+                                            ),
 
                                         TextInput::make('user')
                                             ->label('Username')
@@ -86,6 +162,10 @@ class ConnectionForm
                                             ->maxLength(255)
                                             ->placeholder('database_user'),
                                     ]),
+
+                                TextInput::make('__databases')
+                                    ->hidden()
+                                    ->dehydrated(false),
 
                                 Grid::make(1)
                                     ->schema([

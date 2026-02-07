@@ -3,11 +3,23 @@
 namespace App\Filament\Resources\Schedules\Pages;
 
 use App\Filament\Resources\Schedules\ScheduleResource;
+use App\Filament\Traits\RequiresSettings;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateSchedule extends CreateRecord
 {
+    use RequiresSettings;
+
     protected static string $resource = ScheduleResource::class;
+
+    public function mount(): void
+    {
+        if (!$this->guardSettingsOrRedirect()) {
+            return;
+        }
+
+        parent::mount();
+    }
 
     protected function getFormMaxWidth(): ?string
     {

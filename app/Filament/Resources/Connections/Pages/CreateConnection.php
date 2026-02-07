@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Connections\Pages;
 
 use App\Filament\Resources\Connections\ConnectionResource;
+use App\Filament\Traits\RequiresSettings;
 use App\Models\Connection;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -10,7 +11,18 @@ use Filament\Resources\Pages\CreateRecord;
 
 class CreateConnection extends CreateRecord
 {
+    use RequiresSettings;
+
     protected static string $resource = ConnectionResource::class;
+
+    public function mount(): void
+    {
+        if (!$this->guardSettingsOrRedirect()) {
+            return;
+        }
+
+        parent::mount();
+    }
 
     protected function getRedirectUrl(): string
     {

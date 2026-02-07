@@ -6,7 +6,7 @@
 
         <div class="flex justify-end" style="margin-top: 2rem;">
             <x-filament::button type="submit" color="primary">
-                Save Settings
+                Save Storage Settings
             </x-filament::button>
         </div>
 

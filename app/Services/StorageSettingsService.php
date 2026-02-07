@@ -166,8 +166,10 @@ class StorageSettingsService
                 $errorMessage = 'Bucket not found. Please verify the bucket name exists.';
             } elseif (str_contains($errorMessage, 'InvalidAccessKeyId') || str_contains($errorMessage, 'SignatureDoesNotMatch')) {
                 $errorMessage = 'Invalid credentials. Please check your Access Key ID and Secret Access Key.';
-            } elseif (str_contains($errorMessage, 'Could not resolve host') || str_contains($errorMessage, 'Connection refused')) {
-                $errorMessage = 'Cannot connect to S3 endpoint. Please check your endpoint URL and network connectivity.';
+            } elseif (str_contains($errorMessage, 'Could not resolve host') || str_contains($errorMessage, 'cURL error 6')) {
+                $errorMessage = 'Cannot resolve S3 endpoint hostname. If using an S3-compatible service, make sure "Use Path Style Endpoint" is enabled and your endpoint URL is correct (e.g., https://s3.example.com, not https://bucket.s3.example.com).';
+            } elseif (str_contains($errorMessage, 'Connection refused')) {
+                $errorMessage = 'Cannot connect to S3 endpoint. Please check your endpoint URL and ensure the service is running.';
             }
 
             return [

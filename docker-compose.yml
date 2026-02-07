@@ -4,7 +4,7 @@ services:
       tags:
         - db-backuper:dev
       context: .
-      dockerfile: .deploy/development/Dockerfile
+      dockerfile: .deploy/Dockerfile
     ports:
       - "${APP_PORT:-9033}:80"
     environment:

@@ -2,18 +2,22 @@
 
 namespace App\Filament\Resources\Connections\Tables;
 
+use App\Filament\Resources\Connections\ConnectionResource;
+use App\Filament\Support\SettingsChecker;
 use App\Jobs\CreateManualBackupJob;
 use App\Models\Connection;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
+use Filament\Actions\ReplicateAction;
 use Filament\Notifications\Notification;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TagsInput;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class ConnectionsTable
 {
@@ -78,7 +82,7 @@ class ConnectionsTable
             ])
             ->recordActions([
                 Action::make('test')
-                    ->label('Test Connection')
+                    ->label('Test')
                     ->icon('heroicon-o-beaker')
                     ->color('success')
                     ->action(function (Connection $record) {
@@ -99,9 +103,13 @@ class ConnectionsTable
                         }
                     }),
                 Action::make('backup')
-                    ->label('Create Backup')
+                    ->label('Backup')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('info')
+                    ->disabled(fn (): bool => !SettingsChecker::isConfigured())
+                    ->tooltip(fn (): ?string => !SettingsChecker::isConfigured()
+                        ? SettingsChecker::getMissingMessage()
+                        : null)
                     ->requiresConfirmation()
                     ->modalHeading('Create Test Backup')
                     ->modalDescription('This will queue a backup of the database. You will receive an email notification when the backup is complete.')
@@ -116,6 +124,23 @@ class ConnectionsTable
                             ->helperText('Email addresses to receive backup notification. Press Enter, Tab, comma, or space to add multiple emails.'),
                     ])
                     ->action(function (Connection $record, array $data) {
+                        // Double-check settings before running backup
+                        if (!SettingsChecker::isConfigured()) {
+                            Notification::make()
+                                ->title('Settings Required')
+                                ->warning()
+                                ->body(SettingsChecker::getMissingMessage())
+                                ->persistent()
+                                ->actions([
+                                    Action::make('configure')
+                                        ->label('Go to Settings')
+                                        ->url(\App\Filament\Pages\Settings\SmtpSettings::getUrl())
+                                        ->button(),
+                                ])
+                                ->send();
+                            return;
+                        }
+
                         $emails = array_filter($data['emails'] ?? []);
 
                         if (empty($emails)) {
@@ -136,6 +161,10 @@ class ConnectionsTable
                             ->body('The backup has been queued and will be processed shortly. Notification will be sent to: ' . $emailList)
                             ->send();
                     }),
+                ReplicateAction::make()
+                    ->label('Copy')
+                    ->successNotificationTitle('Connection copied')
+                    ->successRedirectUrl(fn (Model $replica): string => ConnectionResource::getUrl('edit', ['record' => $replica])),
                 EditAction::make(),
                 DeleteAction::make(),
             ])
