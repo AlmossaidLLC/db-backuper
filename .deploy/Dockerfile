@@ -23,7 +23,8 @@ RUN npm ci --no-audit --no-fund \
     && npm run build \
     && rm -rf node_modules
 
-RUN php artisan package:discover --ansi \
+RUN php artisan filament:assets \
+    && php artisan package:discover --ansi \
     && php artisan route:cache --quiet \
     && php artisan view:cache --quiet \
     && rm -rf storage/logs/* storage/framework/cache/data/* storage/framework/sessions/* storage/framework/views/* \
