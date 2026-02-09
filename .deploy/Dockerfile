@@ -1,27 +1,9 @@
-# Composer stage (for vendor needed by frontend build)
-FROM composer:latest AS composer-deps
-WORKDIR /app
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-interaction --prefer-dist --no-scripts --ignore-platform-reqs
-
-# Frontend build stage (needed for Filament theme CSS)
-FROM node:20-alpine AS frontend-build
-
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci --no-audit --no-fund
-
-COPY --from=composer-deps /app/vendor ./vendor
-COPY resources ./resources
-COPY vite.config.js tailwind.config.js* postcss.config.js* ./
-RUN npm run build
-
-# Runtime stage
+# Base already has: PHP 8.3, Composer, mysql-client, postgresql-client, supervisor, node, npm
 FROM almossaidllc/php-laravel-base:8.3
 
 WORKDIR /var/www/html
 
-RUN apk add --no-cache caddy mysql-client postgresql16-client
+RUN apk add --no-cache caddy
 
 COPY .deploy/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY .deploy/supervisord.conf /etc/supervisord.conf
@@ -29,11 +11,17 @@ COPY .deploy/Caddyfile /etc/caddy/Caddyfile
 COPY .deploy/php.ini /usr/local/etc/php/conf.d/custom.ini
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
+# Install PHP dependencies
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-scripts
 
+# Copy application source
 COPY . .
-COPY --from=frontend-build /app/public/build ./public/build
+
+# Build frontend assets (Filament theme CSS)
+RUN npm ci --no-audit --no-fund \
+    && npm run build \
+    && rm -rf node_modules
 
 RUN php artisan package:discover --ansi \
     && php artisan route:cache --quiet \
