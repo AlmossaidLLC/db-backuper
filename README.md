@@ -184,7 +184,7 @@ docker run -d \
 ### Build from Source
 
 ```bash
-docker build -f .deploy/production/Dockerfile -t db-backuper:latest .
+docker build -f .deploy/Dockerfile -t db-backuper:latest .
 docker run -d --name db-backuper -p 9033:80 db-backuper:latest
 ```
 
