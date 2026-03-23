@@ -6,27 +6,27 @@ use App\Models\Connection;
 use App\Services\BackupService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\Mail;
 
 class CreateManualBackupJob implements ShouldQueue
 {
     use Queueable;
 
     public $timeout = 300; // 5 minutes timeout
-    public $tries = 3; // Retry 3 times on failure
+    public $tries = 1; // Don't retry manual backups to avoid duplicate failed records
 
     /**
      * @param array<string> $emails
      */
     public function __construct(
         public Connection $dbConnection,
-        public array $emails
+        public array $emails,
+        public ?string $databaseName = null
     ) {}
 
     public function handle(BackupService $backupService): void
     {
         try {
-            $backup = $backupService->createBackup($this->dbConnection);
+            $backup = $backupService->createBackup($this->dbConnection, null, $this->databaseName);
 
             // Dispatch email sending in a separate job to avoid blocking
             // Email failure won't affect backup success

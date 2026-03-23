@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DB Backuper - Open-Source Database Backup Management</title>
+    <meta name="description" content="A powerful, self-hosted database backup management solution. Supports MySQL, PostgreSQL, SQLite with S3-compatible cloud storage.">
+    <meta name="keywords" content="database backup, mysql backup, postgresql backup, sqlite backup, laravel, filament, self-hosted, docker">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="DB Backuper - Database Backup Management">
+    <meta property="og:description" content="Open-source, self-hosted database backup management with beautiful admin UI.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://almossaidllc.github.io/db-backuper">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --secondary: #8b5cf6;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --surface-light: #334155;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #22c55e;
+            --warning: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--surface);
+            z-index: 100;
+            padding: 16px 0;
+        }
+
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .logo img {
+            width: 36px;
+            height: 36px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--text);
+        }
+
+        .nav-cta {
+            background: var(--primary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        .nav-cta:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 160px 0 100px;
+            text-align: center;
+            background: linear-gradient(180deg, var(--background) 0%, var(--surface) 100%);
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--surface);
+            padding: 8px 16px;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+            border: 1px solid var(--surface-light);
+        }
+
+        .hero-badge span {
+            color: var(--success);
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 800;
+            margin-bottom: 24px;
+            line-height: 1.1;
+        }
+
+        .hero h1 .gradient {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--surface-light);
+        }
+
+        .btn-secondary:hover {
+            background: var(--surface-light);
+            transform: translateY(-2px);
+        }
+
+        .tech-badges {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 48px;
+            flex-wrap: wrap;
+        }
+
+        .tech-badge {
+            background: var(--surface);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            border: 1px solid var(--surface-light);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 100px 0;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .section-header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: var(--surface);
+            border: 1px solid var(--surface-light);
+            border-radius: 16px;
+            padding: 32px;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Databases Section */
+        .databases {
+            padding: 100px 0;
+            background: var(--surface);
+        }
+
+        .db-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            margin-top: 48px;
+        }
+
+        .db-card {
+            background: var(--background);
+            border: 1px solid var(--surface-light);
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .db-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .db-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 8px;
+        }
+
+        .db-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .db-card .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--success);
+            font-size: 0.85rem;
+            margin-top: 12px;
+        }
+
+        /* Storage Section */
+        .storage {
+            padding: 100px 0;
+        }
+
+        .storage-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 48px;
+        }
+
+        .storage-item {
+            background: var(--surface);
+            padding: 16px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            border: 1px solid var(--surface-light);
+        }
+
+        /* Quick Start */
+        .quickstart {
+            padding: 100px 0;
+            background: var(--surface);
+        }
+
+        .code-block {
+            background: var(--background);
+            border: 1px solid var(--surface-light);
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 32px;
+            overflow-x: auto;
+        }
+
+        .code-block pre {
+            font-family: 'Fira Code', 'Monaco', monospace;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .code-block code {
+            color: var(--primary);
+        }
+
+        .code-block .comment {
+            color: #64748b;
+        }
+
+        /* CTA Section */
+        .cta {
+            padding: 100px 0;
+            text-align: center;
+        }
+
+        .cta-box {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 24px;
+            padding: 64px 32px;
+        }
+
+        .cta-box h2 {
+            font-size: 2.5rem;
+            margin-bottom: 16px;
+        }
+
+        .cta-box p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 32px;
+        }
+
+        .cta-box .btn-secondary {
+            background: white;
+            color: var(--background);
+            border: none;
+        }
+
+        .cta-box .btn-secondary:hover {
+            background: #f1f5f9;
+        }
+
+        /* Footer */
+        footer {
+            padding: 48px 0;
+            border-top: 1px solid var(--surface);
+            text-align: center;
+        }
+
+        footer p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hero {
+                padding: 120px 0 80px;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .section-header h2 {
+                font-size: 2rem;
+            }
+
+            .cta-box {
+                padding: 48px 24px;
+            }
+
+            .cta-box h2 {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="container">
+            <a href="#" class="logo">
+                <img src="favicon.svg" alt="DB Backuper">
+                DB Backuper
+            </a>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#databases">Databases</a></li>
+                <li><a href="#storage">Storage</a></li>
+                <li><a href="#quickstart">Quick Start</a></li>
+            </ul>
+            <a href="https://github.com/AlmossaidLLC/db-backuper" class="nav-cta">
+                ⭐ Star on GitHub
+            </a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-badge">
+                <span>●</span> Open Source & Self-Hosted
+            </div>
+            <h1>
+                Database Backups<br>
+                <span class="gradient">Made Simple</span>
+            </h1>
+            <p>
+                A powerful, self-hosted backup management solution.
+                Connect multiple databases, schedule automated backups,
+                and store them locally or in the cloud.
+            </p>
+            <div class="hero-buttons">
+                <a href="https://github.com/AlmossaidLLC/db-backuper" class="btn btn-primary">
+                    📦 Get Started
+                </a>
+                <a href="https://hub.docker.com/r/almossaidllc/db-backuper" class="btn btn-secondary">
+                    🐳 Docker Hub
+                </a>
+            </div>
+            <div class="tech-badges">
+                <span class="tech-badge">Laravel 12</span>
+                <span class="tech-badge">Filament v4</span>
+                <span class="tech-badge">PHP 8.2+</span>
+                <span class="tech-badge">MIT License</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>Powerful Features</h2>
+                <p>Everything you need for reliable database backups</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>Automated Scheduling</h3>
+                    <p>Set up recurring backups with hourly, daily, weekly, monthly, or custom cron expressions.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🗄️</div>
+                    <h3>Multi-Database</h3>
+                    <p>Connect and backup multiple MySQL, PostgreSQL, and SQLite databases from a single dashboard.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">☁️</div>
+                    <h3>Cloud Storage</h3>
+                    <p>Store backups locally or offload to AWS S3, MinIO, DigitalOcean Spaces, Backblaze B2, and more.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📧</div>
+                    <h3>Email Notifications</h3>
+                    <p>Get instant alerts on backup success or failure with customizable SMTP settings.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>Secure & Compressed</h3>
+                    <p>Encrypted credentials and automatic gzip compression to minimize storage usage.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <h3>Modern Interface</h3>
+                    <p>Beautiful Filament admin panel with dark mode support and intuitive navigation.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Databases Section -->
+    <section class="databases" id="databases">
+        <div class="container">
+            <div class="section-header">
+                <h2>Supported Databases</h2>
+                <p>Full support for popular database engines</p>
+            </div>
+            <div class="db-grid">
+                <div class="db-card">
+                    <h3>MySQL</h3>
+                    <p>Using mysqldump</p>
+                    <div class="status">✓ Full Support</div>
+                </div>
+                <div class="db-card">
+                    <h3>MariaDB</h3>
+                    <p>Using mariadb-dump</p>
+                    <div class="status">✓ Full Support</div>
+                </div>
+                <div class="db-card">
+                    <h3>PostgreSQL</h3>
+                    <p>Using pg_dump</p>
+                    <div class="status">✓ Full Support</div>
+                </div>
+                <div class="db-card">
+                    <h3>SQLite</h3>
+                    <p>Native file copy</p>
+                    <div class="status">✓ Full Support</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Storage Section -->
+    <section class="storage" id="storage">
+        <div class="container">
+            <div class="section-header">
+                <h2>Flexible Storage Options</h2>
+                <p>Store backups where you need them</p>
+            </div>
+            <div class="storage-list">
+                <div class="storage-item">📁 Local Filesystem</div>
+                <div class="storage-item">☁️ Amazon S3</div>
+                <div class="storage-item">🪣 MinIO</div>
+                <div class="storage-item">💧 DigitalOcean Spaces</div>
+                <div class="storage-item">🅱️ Backblaze B2</div>
+                <div class="storage-item">💾 Wasabi</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Start Section -->
+    <section class="quickstart" id="quickstart">
+        <div class="container">
+            <div class="section-header">
+                <h2>Quick Start</h2>
+                <p>Get up and running in seconds with Docker</p>
+            </div>
+            <div class="code-block">
+                <pre><span class="comment"># Pull and run with a single command</span>
+<code>docker run -d --name db-backuper -p 9033:80 almossaidllc/db-backuper:latest</code>
+
+<span class="comment"># With data persistence</span>
+<code>docker run -d \
+    --name db-backuper \
+    -p 9033:80 \
+    -v db-backuper-data:/var/www/html/database \
+    -v db-backuper-storage:/var/www/html/storage/app \
+    almossaidllc/db-backuper:latest</code>
+
+<span class="comment"># Access at http://localhost:9033</span>
+<span class="comment"># Default login: demo@demo.com / backuper</span></pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <div class="container">
+            <div class="cta-box">
+                <h2>Ready to secure your databases?</h2>
+                <p>Start backing up your databases today. Free and open-source, forever.</p>
+                <a href="https://github.com/AlmossaidLLC/db-backuper" class="btn btn-secondary">
+                    View on GitHub →
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>
+                Made with ❤️ by <a href="https://github.com/AlmossaidLLC">Almossaid LLC</a> | <a href="https://github.com/AbdelilahEzzouini">Abdelilah EZZOUUINI</a>
+                &nbsp;•&nbsp;
+                <a href="https://github.com/AlmossaidLLC/db-backuper/blob/main/LICENSE">MIT License</a>
+            </p>
+        </div>
+    </footer>
+</body>
+</html>

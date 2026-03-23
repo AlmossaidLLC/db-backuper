@@ -52,8 +52,9 @@ class BackupInfolist
                         TextEntry::make('connection.label')
                             ->label('Connection'),
 
-                        TextEntry::make('connection.db')
-                            ->label('Database'),
+                        TextEntry::make('database_name')
+                            ->label('Database')
+                            ->placeholder('—'),
 
                         TextEntry::make('connection.type')
                             ->label('Database Type')

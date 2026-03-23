@@ -26,11 +26,46 @@ class BackupService
         }
     }
 
-    public function createBackup(Connection $connection, ?Schedule $schedule = null): Backup
+    /**
+     * Create backups for all databases on a server.
+     *
+     * @return array<Backup>
+     */
+    public function createServerBackup(Connection $connection): array
     {
+        $result = $connection->listDatabases();
+
+        if (!$result['success']) {
+            throw new \Exception('Failed to list databases: ' . ($result['message'] ?? 'Unknown error'));
+        }
+
+        $databases = $result['databases'] ?? [];
+
+        if (empty($databases)) {
+            throw new \Exception('No databases found on the server.');
+        }
+
+        $backups = [];
+
+        foreach ($databases as $database) {
+            $backups[] = $this->createBackup($connection, null, $database);
+        }
+
+        return $backups;
+    }
+
+    public function createBackup(Connection $connection, ?Schedule $schedule = null, ?string $databaseName = null): Backup
+    {
+        $dbName = $databaseName ?? $connection->db;
+
+        if (empty($dbName)) {
+            throw new \Exception('No database name specified. Use createServerBackup() to back up all databases on a server.');
+        }
+
         $backup = Backup::create([
             'connection_id' => $connection->id,
             'schedule_id' => $schedule?->id,
+            'database_name' => $dbName,
             'file_path' => '',
             'file_name' => '',
             'status' => 'pending',
@@ -40,8 +75,8 @@ class BackupService
             $backup->status = 'running';
             $backup->save();
 
-            $dumper = $this->createDumper($connection);
-            $fileName = $this->generateFileName($connection);
+            $dumper = $this->createDumper($connection, $dbName);
+            $fileName = $this->generateFileName($connection, $dbName);
             $filePath = 'backups/' . $fileName;
 
             $fullPath = storage_path('app/' . $filePath);
@@ -170,20 +205,21 @@ class BackupService
         }
     }
 
-    protected function createDumper(Connection $connection): DbDumper
+    protected function createDumper(Connection $connection, ?string $databaseName = null): DbDumper
     {
         $config = $connection->getConnectionConfig();
         $extra = $connection->getExtraAsArray();
+        $dbName = $databaseName ?? $connection->db;
 
         return match ($connection->type) {
-            'mysql' => $this->createMySqlDumper($connection, $config, $extra),
-            'pgsql' => $this->createPostgreSqlDumper($connection, $config, $extra),
+            'mysql' => $this->createMySqlDumper($connection, $config, $extra, $dbName),
+            'pgsql' => $this->createPostgreSqlDumper($connection, $config, $extra, $dbName),
             'sqlite' => $this->createSqliteDumper($connection, $config, $extra),
             default => throw new \Exception("Unsupported database type: {$connection->type}"),
         };
     }
 
-    protected function createMySqlDumper(Connection $connection, array $config, array $extra): MySql
+    protected function createMySqlDumper(Connection $connection, array $config, array $extra, ?string $databaseName = null): MySql
     {
         // Ensure autoloader is loaded
         if (!class_exists(\Spatie\DbDumper\Databases\MySql::class)) {
@@ -201,7 +237,7 @@ class BackupService
         }
 
         $dumper = MySql::create()
-            ->setDbName($connection->db)
+            ->setDbName($databaseName ?? $connection->db)
             ->setUserName($connection->user)
             ->setPassword($connection->password);
 
@@ -222,6 +258,15 @@ class BackupService
         $dumper->addExtraOption('--quick'); // Retrieve rows for a table from the server a row at a time
         $dumper->addExtraOption('--lock-tables=false'); // Don't lock tables (works with --single-transaction)
 
+        // Some MySQL/MariaDB clients default to TLS for remote hosts.
+        // If SSL isn't explicitly requested, disable it to avoid failures on non-SSL servers.
+        $sslMode = strtoupper((string) ($extra['ssl_mode'] ?? ''));
+        if ($sslMode !== '' && $sslMode !== 'DISABLED') {
+            $dumper->addExtraOption("--ssl-mode={$sslMode}");
+        } else {
+            $dumper->addExtraOption('--skip-ssl');
+        }
+
         // Note: --skip-column-statistics is NOT added here because:
         // 1. It's only needed when MySQL 8 client dumps a MySQL 5.x server
         // 2. MariaDB's mysqldump/mariadb-dump doesn't support this option
@@ -233,7 +278,7 @@ class BackupService
         return $dumper;
     }
 
-    protected function createPostgreSqlDumper(Connection $connection, array $config, array $extra): PostgreSql
+    protected function createPostgreSqlDumper(Connection $connection, array $config, array $extra, ?string $databaseName = null): PostgreSql
     {
         // Ensure autoloader is loaded
         if (!class_exists(\Spatie\DbDumper\Databases\PostgreSql::class)) {
@@ -244,7 +289,7 @@ class BackupService
         }
 
         $dumper = PostgreSql::create()
-            ->setDbName($connection->db)
+            ->setDbName($databaseName ?? $connection->db)
             ->setUserName($connection->user)
             ->setPassword($connection->password);
 
@@ -276,10 +321,10 @@ class BackupService
             ->setDbName($connection->db);
     }
 
-    protected function generateFileName(Connection $connection): string
+    protected function generateFileName(Connection $connection, ?string $databaseName = null): string
     {
         $timestamp = now()->format('Y-m-d_H-i-s');
-        $dbName = Str::slug($connection->db);
+        $dbName = Str::slug($databaseName ?? $connection->db);
         $extension = match ($connection->type) {
             'mysql' => 'sql.gz',
             'pgsql' => 'sql.gz',

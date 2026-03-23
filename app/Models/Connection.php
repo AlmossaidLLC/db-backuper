@@ -111,7 +111,10 @@ class Connection extends Model
         }
     }
 
-    public function getConnectionConfig(): array
+    /**
+     * Get a connection config array, optionally overriding the database name.
+     */
+    public function getConnectionConfig(?string $databaseName = null): array
     {
         $config = [
             'driver' => $this->type,
@@ -119,10 +122,10 @@ class Connection extends Model
 
         // SQLite uses database as file path, not host/user/password
         if ($this->type === 'sqlite') {
-            $config['database'] = $this->db;
+            $config['database'] = $databaseName ?? $this->db;
         } else {
             $config['host'] = $this->server;
-            $config['database'] = $this->db;
+            $config['database'] = $databaseName ?? $this->db ?? $this->getSystemDatabase();
             $config['username'] = $this->user;
             $config['password'] = $this->password;
 
@@ -172,16 +175,7 @@ class Connection extends Model
     public function listDatabases(): array
     {
         try {
-            $config = $this->getConnectionConfig();
-
-            // Use a system database to connect and list databases
-            if ($this->type === 'mysql') {
-                $config['database'] = 'information_schema';
-            } elseif ($this->type === 'pgsql') {
-                $config['database'] = 'postgres';
-            } elseif ($this->type === 'sqlsrv') {
-                $config['database'] = 'master';
-            }
+            $config = $this->getConnectionConfig($this->getSystemDatabase());
 
             config(['database.connections.list_databases' => $config]);
 
@@ -231,6 +225,19 @@ class Connection extends Model
                 'message' => $e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Get the system database name used for server-level connections.
+     */
+    public function getSystemDatabase(): string
+    {
+        return match ($this->type) {
+            'mysql' => 'information_schema',
+            'pgsql' => 'postgres',
+            'sqlsrv' => 'master',
+            default => '',
+        };
     }
 
     public function backups(): HasMany

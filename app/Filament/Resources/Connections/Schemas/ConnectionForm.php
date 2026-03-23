@@ -43,7 +43,7 @@ class ConnectionForm
                                                 'sqlsrv' => 'SQL Server',
                                             ])
                                             ->default('mysql')
-                                            ->native(false),
+                                            ->native(true),
                                     ]),
                             ])
                             ->extraAttributes([
@@ -79,40 +79,21 @@ class ConnectionForm
 
                                 Grid::make(2)
                                     ->schema([
-                                        Select::make('db')
+                                        TextInput::make('db')
                                             ->label('Database Name')
-                                            ->required()
-                                            ->searchable()
-                                            ->getSearchResultsUsing(function (?string $search, Get $get): array {
+                                            ->maxLength(255)
+                                            ->placeholder('Leave empty for server-level connection')
+                                            ->datalist(function (Get $get): array {
                                                 $databases = $get('__databases') ?? [];
 
-                                                // If no search term, show all loaded databases
-                                                if (empty($search)) {
-                                                    return $databases;
-                                                }
-
-                                                // Filter databases by search term
-                                                $filtered = array_filter(
-                                                    $databases,
-                                                    fn ($db) => str_contains(strtolower($db), strtolower($search))
-                                                );
-
-                                                // Always include the search term as an option (for custom database names)
-                                                if (!in_array($search, $filtered)) {
-                                                    $filtered = [$search => $search . ' (custom)'] + $filtered;
-                                                }
-
-                                                return $filtered;
+                                                return is_array($databases) ? array_values($databases) : [];
                                             })
-                                            ->getOptionLabelUsing(fn ($value): ?string => $value)
-                                            ->placeholder('Type or select database name')
-                                            ->helperText('Click "Load Databases" to fetch available databases, or type a name manually')
-                                            ->aboveContent(
+                                            ->helperText('Optional — leave empty to connect to the entire server. You can select databases when creating a backup.')
+                                            ->hintAction(
                                                 Action::make('loadDatabases')
                                                     ->label('Load Databases')
                                                     ->icon(Heroicon::ArrowPath)
                                                     ->color('gray')
-                                                    ->size('sm')
                                                     ->action(function (Get $schemaGet, \Filament\Schemas\Components\Utilities\Set $schemaSet) {
                                                         // Build a temporary connection to test
                                                         $tempConnection = new Connection();
@@ -144,7 +125,7 @@ class ConnectionForm
                                                             Notification::make()
                                                                 ->title('Databases Loaded')
                                                                 ->success()
-                                                                ->body('Found ' . count($result['databases']) . ' database(s). Click on the field and type to search.')
+                                                                ->body('Found ' . count($result['databases']) . ' database(s). Click on the field to see suggestions.')
                                                                 ->send();
                                                         } else {
                                                             Notification::make()

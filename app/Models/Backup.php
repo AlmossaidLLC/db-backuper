@@ -10,6 +10,7 @@ class Backup extends Model
     protected $fillable = [
         'connection_id',
         'schedule_id',
+        'database_name',
         'file_path',
         'file_name',
         'file_size',
