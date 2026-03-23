@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Schedules\Pages;
 
 use App\Filament\Resources\Schedules\ScheduleResource;
+use App\Models\Connection;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
@@ -29,6 +30,21 @@ class EditSchedule extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        $backupScope = $data['backup_scope'] ?? 'specific';
+
+        if ($backupScope === 'full') {
+            $data['database_name'] = null;
+        }
+
+        if (empty($data['database_name']) && !empty($data['connection_id'])) {
+            $connection = Connection::find($data['connection_id']);
+            if ($connection?->db) {
+                $data['database_name'] = $connection->db;
+            }
+        }
+
+        unset($data['backup_scope']);
+
         if ($data['frequency'] !== 'custom') {
             $data['cron_expression'] = match ($data['frequency']) {
                 'hourly' => '0 * * * *',

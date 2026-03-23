@@ -29,6 +29,12 @@ class BackupsTable
                     ->searchable()
                     ->sortable(),
 
+                TextColumn::make('database_name')
+                    ->label('Database')
+                    ->searchable()
+                    ->sortable()
+                    ->placeholder('—'),
+
                 TextColumn::make('schedule.name')
                     ->label('Schedule')
                     ->searchable()

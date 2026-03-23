@@ -7,14 +7,13 @@ use App\Models\Schedule;
 use App\Services\BackupService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\Mail;
 
 class RunBackupJob implements ShouldQueue
 {
     use Queueable;
 
-    public $timeout = 300; // 5 minutes timeout
-    public $tries = 3; // Retry 3 times on failure
+    public $timeout = 1800; // 30 minutes timeout (full server backups can be large)
+    public $tries = 1; // Don't retry to avoid duplicate backups
 
     public function __construct(
         public Schedule $schedule
@@ -30,7 +29,20 @@ class RunBackupJob implements ShouldQueue
         }
 
         try {
-            $backup = $backupService->createBackup($connection, $this->schedule);
+            // Prefer schedule-specific target DB when configured.
+            // Fallback to connection->db for backward compatibility with existing schedules.
+            $targetDatabase = $this->schedule->database_name ?: $connection->db;
+
+            if ($targetDatabase) {
+                $backups = [$backupService->createBackup($connection, $this->schedule, $targetDatabase)];
+            } else {
+                $backups = $backupService->createServerBackup($connection);
+
+                // Associate the schedule with each backup
+                foreach ($backups as $backup) {
+                    $backup->update(['schedule_id' => $this->schedule->id]);
+                }
+            }
 
             $this->schedule->update([
                 'last_run_at' => now(),
@@ -40,25 +52,25 @@ class RunBackupJob implements ShouldQueue
             $this->schedule->save();
 
             if (!empty($this->schedule->notification_emails) && \App\Services\MailSettingsService::isConfigured()) {
-                // Email failure won't affect backup success
-                foreach ($this->schedule->notification_emails as $email) {
-                    try {
-                        \App\Jobs\SendBackupNotificationJob::dispatch($backup, $email);
-                    } catch (\Exception $emailException) {
-                        // Log but don't fail - backup was successful
-                        \Illuminate\Support\Facades\Log::warning('Failed to dispatch email notification', [
-                            'backup_id' => $backup->id,
-                            'schedule_id' => $this->schedule->id,
-                            'email' => $email,
-                            'error' => $emailException->getMessage(),
-                        ]);
+                foreach ($backups as $backup) {
+                    foreach ($this->schedule->notification_emails as $email) {
+                        try {
+                            \App\Jobs\SendBackupNotificationJob::dispatch($backup, $email);
+                        } catch (\Exception $emailException) {
+                            \Illuminate\Support\Facades\Log::warning('Failed to dispatch email notification', [
+                                'backup_id' => $backup->id,
+                                'schedule_id' => $this->schedule->id,
+                                'email' => $email,
+                                'error' => $emailException->getMessage(),
+                            ]);
+                        }
                     }
                 }
             } elseif (!empty($this->schedule->notification_emails)) {
                 \Illuminate\Support\Facades\Log::info('Email notification skipped: SMTP settings not configured', [
-                    'backup_id' => $backup->id,
                     'schedule_id' => $this->schedule->id,
                     'emails' => $this->schedule->notification_emails,
+                    'backup_count' => count($backups),
                 ]);
             }
         } catch (\Exception $e) {

@@ -10,6 +10,7 @@ class Schedule extends Model
 {
     protected $fillable = [
         'connection_id',
+        'database_name',
         'name',
         'cron_expression',
         'frequency',

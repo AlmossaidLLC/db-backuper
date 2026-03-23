@@ -27,6 +27,13 @@ class SchedulesTable
                     ->searchable()
                     ->sortable(),
 
+                TextColumn::make('database_name')
+                    ->label('Target')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => $state ?: 'All Databases')
+                    ->color(fn (?string $state): string => $state ? 'info' : 'success')
+                    ->searchable(),
+
                 TextColumn::make('frequency')
                     ->label('Frequency')
                     ->badge()

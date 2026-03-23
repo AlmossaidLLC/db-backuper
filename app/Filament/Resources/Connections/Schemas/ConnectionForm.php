@@ -81,15 +81,14 @@ class ConnectionForm
                                     ->schema([
                                         TextInput::make('db')
                                             ->label('Database Name')
-                                            ->required()
                                             ->maxLength(255)
-                                            ->placeholder('Type or select database name')
+                                            ->placeholder('Leave empty for server-level connection')
                                             ->datalist(function (Get $get): array {
                                                 $databases = $get('__databases') ?? [];
 
                                                 return is_array($databases) ? array_values($databases) : [];
                                             })
-                                            ->helperText('Click the refresh icon to load databases, or type a name manually')
+                                            ->helperText('Optional — leave empty to connect to the entire server. You can select databases when creating a backup.')
                                             ->hintAction(
                                                 Action::make('loadDatabases')
                                                     ->label('Load Databases')
