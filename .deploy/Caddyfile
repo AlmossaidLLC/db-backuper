@@ -2,10 +2,13 @@
     root * /var/www/html/public
     encode zstd gzip
 
-    @hiddenFiles path_regexp hidden ^/\.(?!well-known/)
+    @hiddenFiles {
+        path /.*
+        not path /.well-known/*
+    }
     respond @hiddenFiles 404
 
-    @sensitiveFiles path /composer.json /composer.lock /package.json /package-lock.json /phpunit.xml /vite.config.js /artisan /.env /.env.*
+    @sensitiveFiles path /composer.json /composer.lock /package.json /package-lock.json /phpunit.xml /vite.config.js /artisan /.env /.env*
     respond @sensitiveFiles 404
 
     header {
