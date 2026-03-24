@@ -25,8 +25,6 @@ RUN npm ci --no-audit --no-fund \
 
 RUN php artisan filament:assets \
     && php artisan package:discover --ansi \
-    && php artisan route:cache --quiet \
-    && php artisan view:cache --quiet \
     && rm -rf storage/logs/* storage/framework/cache/data/* storage/framework/sessions/* storage/framework/views/* \
     && mkdir -p /var/log/supervisor \
     && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database /var/log/supervisor \
